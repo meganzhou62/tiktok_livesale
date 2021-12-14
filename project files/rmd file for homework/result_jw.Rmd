@@ -1,0 +1,94 @@
+---
+title: "results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Do celebrities have an advantage over KOLs (key opinion leader)? In particular, what’s the revenue comparison between the two groups? We have a hypothesis that people come to celebrities’ live streaming rooms because they like the person and come to KOLs’ live streaming rooms because KOLs offer a higher discount or have expertise in the specific area. 
+
+```{r}
+library("readxl")
+livestream <- read_excel("../assignmentand data/Data_Livestream_General_processed.xlsx")
+livestream$re<-as.numeric(livestream$re)
+livestream
+
+sales <-read_excel("../assignmentand data/Data_Sales_processed.xlsx")
+sales
+
+kol<- livestream%>%select(Ho,K)%>%distinct()
+
+livestream %>% group_by(Ho) %>%
+  dplyr::summarize(Sales_amount_total = sum(re),n=n()) 
+
+livestream2<-livestream %>% group_by(Ho) %>%
+  summarize(Sales_amount_total = sum(re)) %>%
+  left_join(kol,by='Ho') 
+
+ggplot(livestream, aes(K, re)) + 
+  geom_boxplot() + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::comma)+
+  theme_grey(16)
+
+ggplot(livestream, aes(re)) +
+geom_histogram()+ 
+facet_wrap(~K)+
+scale_x_continuous(labels = scales::comma)
+
+
+
+#total sales
+aggregate(re ~ K, livestream, sum)
+df<-aggregate(re ~ Ho, livestream, sum)
+df2<-df %>% left_join(kol,by='Ho')
+
+df2%>%
+ggplot(aes(K, re, fill= K)) +
+geom_col()+ 
+scale_y_continuous(labels = scales::comma)
+
+df2$Ho<-as.factor(df2$Ho)%>%fct_reorder(-df2$re)
+#levels(df2$Ho)
+
+df2%>%
+ggplot(aes(Ho, re, fill= K)) +
+geom_col()+ 
+scale_y_continuous(labels = scales::comma)+
+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+#avg sales per stream
+
+#by categories
+sales2<-sales %>% group_by(Name,Goods_category) %>%
+  summarize(Sales_volume_total = sum(as.numeric(Sales_volume)), Sales_amount_total = sum(Sales_amount)) %>%
+  left_join(kol,by=c('Name'='Ho')) %>%
+  filter(!is.na(Goods_category))
+  
+sales2%>%
+filter(K=='T')%>%
+ggplot(aes(Sales_amount_total, Goods_category)) +
+geom_col()+ 
+facet_wrap(~Name)+
+scale_x_continuous(labels = scales::comma)
+
+
+sales2%>%
+filter(K=='F')%>%
+ggplot(aes(Sales_amount_total, Goods_category)) +
+geom_col()+ 
+facet_wrap(~Name)+
+scale_x_continuous(labels = scales::comma)
+
+aggregate(re ~ K, livestream, sum)
+```
+From 2021/06 to 2021/08, among top20 hosts, KOL generated more revenue than celebrities.
+
+
+Do celebrities have an advantage over KOLs (key opinion leader)? In particular, what’s the revenue comparison between the two groups? 
+We have a hypothesis that people come to celebrities’ live streaming rooms because they like the person and come to KOLs’ live streaming rooms because KOLs offer a higher discount or have expertise in the specific area. 
+We will focus on the top 20 hosts’ sales data in the past quarter to answer the questions. We will first define people to be celebrities if they are famous actors/actresses/singers based on our common judgments. Then we will look at their sales data and test our hypothesis.
+look at sales in different cateogry
+
